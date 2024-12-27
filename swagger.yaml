@@ -1,0 +1,316 @@
+openapi: 3.0.0
+info:
+  title: Custom URL Shortener API
+  version: 1.0.0
+  description: A scalable Custom URL Shortener API with advanced analytics and user authentication.
+
+servers:
+  - url: http://localhost:3000/api
+    description: Local development server
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    User:
+      type: object
+      properties:
+        username:
+          type: string
+        password:
+          type: string
+    
+    ShortUrl:
+      type: object
+      properties:
+        longUrl:
+          type: string
+        customAlias:
+          type: string
+        topic:
+          type: string
+    
+    UrlAnalytics:
+      type: object
+      properties:
+        totalClicks:
+          type: integer
+        uniqueClicks:
+          type: integer
+        clicksByDate:
+          type: array
+          items:
+            type: object
+            properties:
+              date:
+                type: string
+              count:
+                type: integer
+        osType:
+          type: array
+          items:
+            type: object
+            properties:
+              osName:
+                type: string
+              uniqueClicks:
+                type: integer
+              uniqueUsers:
+                type: integer
+        deviceType:
+          type: array
+          items:
+            type: object
+            properties:
+              deviceName:
+                type: string
+              uniqueClicks:
+                type: integer
+              uniqueUsers:
+                type: integer
+
+paths:
+  /auth/register:
+    post:
+      summary: Register a new user
+      tags:
+        - Authentication
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        '200':
+          description: User registered successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+        '400':
+          description: Bad request
+        '500':
+          description: Server error
+
+  /auth/login:
+    post:
+      summary: Login user
+      tags:
+        - Authentication
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        '200':
+          description: User logged in successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+        '400':
+          description: Bad request
+        '500':
+          description: Server error
+
+  /shorten:
+    post:
+      summary: Create a short URL
+      tags:
+        - URL Shortener
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ShortUrl'
+      responses:
+        '200':
+          description: Short URL created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  shortUrl:
+                    type: string
+                  createdAt:
+                    type: string
+                    format: date-time
+        '400':
+          description: Bad request
+        '401':
+          description: Unauthorized
+        '429':
+          description: Too many requests
+        '500':
+          description: Server error
+
+  /shorten/{alias}:
+    get:
+      summary: Redirect to long URL
+      tags:
+        - URL Shortener
+      parameters:
+        - in: path
+          name: alias
+          required: true
+          schema:
+            type: string
+      responses:
+        '302':
+          description: Redirect to long URL
+        '404':
+          description: URL not found
+        '500':
+          description: Server error
+
+  /analytics/{alias}:
+    get:
+      summary: Get URL analytics
+      tags:
+        - Analytics
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: alias
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: URL analytics retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UrlAnalytics'
+        '401':
+          description: Unauthorized
+        '404':
+          description: URL not found
+        '500':
+          description: Server error
+
+  /analytics/topic/{topic}:
+    get:
+      summary: Get topic-based analytics
+      tags:
+        - Analytics
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: topic
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Topic-based analytics retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  totalClicks:
+                    type: integer
+                  uniqueClicks:
+                    type: integer
+                  clicksByDate:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        date:
+                          type: string
+                        count:
+                          type: integer
+                  urls:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        shortUrl:
+                          type: string
+                        totalClicks:
+                          type: integer
+                        uniqueClicks:
+                          type: integer
+        '401':
+          description: Unauthorized
+        '500':
+          description: Server error
+
+  /analytics/overall:
+    get:
+      summary: Get overall analytics
+      tags:
+        - Analytics
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Overall analytics retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  totalUrls:
+                    type: integer
+                  totalClicks:
+                    type: integer
+                  uniqueClicks:
+                    type: integer
+                  clicksByDate:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        date:
+                          type: string
+                        count:
+                          type: integer
+                  osType:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        osName:
+                          type: string
+                        uniqueClicks:
+                          type: integer
+                        uniqueUsers:
+                          type: integer
+                  deviceType:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        deviceName:
+                          type: string
+                        uniqueClicks:
+                          type: integer
+                        uniqueUsers:
+                          type: integer
+        '401':
+          description: Unauthorized
+        '500':
+          description: Server error
+
